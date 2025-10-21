@@ -4,7 +4,7 @@
  * Implements Anthropic's Agent Skills Specification (v1.0) for OpenCode.
  * 
  * Features:
- * - Discovers SKILL.md files from .opencode/skills/ and ~/.opencode/skills/
+ * - Discovers SKILL.md files from .opencode/skills/, ~/.opencode/skills/, and ~/.config/opencode/skills/
  * - Validates skills against Anthropic's spec (YAML frontmatter + Markdown)
  * - Registers dynamic tools with pattern skills_{{skill_name}}
  * - Returns skill content with base directory context for path resolution
@@ -172,16 +172,19 @@ async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
   return skills
 }
 
-// Main Plugin Export
 export const SkillsPlugin: Plugin = async (ctx) => {
-  console.log("🎯 Skills Plugin: Starting discovery...")
   
+  // Determine config path: $XDG_CONFIG_HOME/opencode/skills or ~/.config/opencode/skills
+  const xdgConfigHome = process.env.XDG_CONFIG_HOME
+  const configSkillsPath = xdgConfigHome
+    ? join(xdgConfigHome, "opencode/skills")
+    : join(os.homedir(), ".config/opencode/skills")
+
   const skills = await discoverSkills([
     join(ctx.directory, ".opencode/skills"),
-    join(os.homedir(), ".opencode/skills")
+    join(os.homedir(), ".opencode/skills"),
+    configSkillsPath,
   ])
-  
-  console.log(`✅ Found ${skills.length} skill(s):`, skills.map(s => s.name))
   
   // Create a tool for each skill
   const tools: Record<string, any> = {}
@@ -237,8 +240,6 @@ ${skill.content}
       }
     })
   }
-  
-  console.log(`✅ Registered ${Object.keys(tools).length} skill tool(s)`)
-  
+
   return { tool: tools }
 }

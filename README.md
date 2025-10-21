@@ -156,10 +156,12 @@ The Agent automatically understands and resolves these paths correctly.
 
 ## Global Skills
 
-Skills in `~/.opencode/skills/` are available across **all** projects:
+Skills in `~/.opencode/skills/` or `~/.config/opencode/skills/` are available across **all** projects:
 
 ```bash
 mkdir -p ~/.opencode/skills/personal-notes
+# or
+mkdir -p ~/.config/opencode/skills/personal-notes
 # Create SKILL.md...
 ```
 
@@ -241,7 +243,7 @@ export const SkillsPlugin: Plugin;
 
 The plugin automatically:
 
-1. Scans for `**/SKILL.md` files in discovery paths
+1. Scans for `**/SKILL.md` files in discovery paths (`.opencode/skills/`, `~/.opencode/skills/`, `~/.config/opencode/skills/`)
 2. Validates YAML frontmatter against spec
 3. Registers a tool for each valid skill
 4. Returns skill content with execution instructions
