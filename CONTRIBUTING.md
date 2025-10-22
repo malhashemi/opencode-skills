@@ -57,10 +57,12 @@ Click the "Fork" button on GitHub to create your own copy of the repository.
 
 #### 2. Clone Your Fork
 
-```bash
+# Clone using SSH
 git clone git@github.com:YOUR-USERNAME/opencode-skills.git
+
+# OR Clone using HTTPS
+git clone https://github.com/YOUR-USERNAME/opencode-skills.git
 cd opencode-skills
-```
 
 #### 3. Add Upstream Remote
 
