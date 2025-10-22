@@ -11,6 +11,10 @@
     "type": "git",
     "url": "git+https://github.com/malhashemi/opencode-skills.git"
   },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "keywords": [
     "opencode",
     "skills",
