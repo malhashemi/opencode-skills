@@ -148,18 +148,29 @@ async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
 
       foundPath = true;
     } catch (error) {
-			// ignore
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        (error as any).code === "ENOENT"
+      ) {
+        // Directory does not exist, expected in some cases
+      } else {
+        console.warn(
+          `Unexpected error while scanning skills in ${basePath}:`,
+          error,
+        )
+      }
     }
   }
   
-	if (!foundPath) {
-		// Log warning but continue with other paths
-		console.warn(
-			`⚠️ Could find any skills directories. Tried:`,
-			...basePaths.map(path => `\n     ${path}`),
-			`\n   This is normal if none of the directories exist yet.`,
-		)
-	}
+  if (!foundPath) {
+    console.warn(
+      `⚠️ Could not find any skills directories. Tried:`,
+      ...basePaths.map(path => `\n     ${path}`),
+      `\n   This is normal if none of the directories exist yet.`,
+    )
+  }
 
   // Detect duplicate tool names
   const toolNames = new Set<string>()
