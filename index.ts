@@ -129,6 +129,7 @@ async function parseSkill(skillPath: string, baseDir: string): Promise<Skill | n
  */
 async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
   const skills: Skill[] = []
+  let foundPath = false;
   
   for (const basePath of basePaths) {
     try {
@@ -144,16 +145,22 @@ async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
           skills.push(skill)
         }
       }
+
+      foundPath = true;
     } catch (error) {
-      // Log warning but continue with other paths
-      console.warn(
-        `⚠️  Could not scan skills directory: ${basePath}`,
-        `\n   This is normal if the directory doesn't exist yet.`,
-        `\n   Create it with: mkdir -p ${basePath}`
-      )
+			// ignore
     }
   }
   
+	if (!foundPath) {
+		// Log warning but continue with other paths
+		console.warn(
+			`⚠️ Could find any skills directories. Tried:`,
+			...basePaths.map(path => `\n     ${path}`),
+			`\n   This is normal if none of the directories exist yet.`,
+		)
+	}
+
   // Detect duplicate tool names
   const toolNames = new Set<string>()
   const duplicates = []
