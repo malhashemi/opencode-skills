@@ -199,10 +199,11 @@ export const SkillsPlugin: Plugin = async (ctx) => {
     ? join(xdgConfigHome, "opencode/skills")
     : join(os.homedir(), ".config/opencode/skills")
 
+  // Discovery order: lowest to highest priority (last wins on duplicate tool names)
   const skills = await discoverSkills([
-    join(ctx.directory, ".opencode/skills"),
-    join(os.homedir(), ".opencode/skills"),
-    configSkillsPath,
+    configSkillsPath,                        // Lowest priority: XDG config
+    join(os.homedir(), ".opencode/skills"),  // Medium priority: Global home
+    join(ctx.directory, ".opencode/skills"), // Highest priority: Project-local
   ])
   
   // Create a tool for each skill
