@@ -15,6 +15,12 @@ Bring Anthropic's Agent Skills Specification (v1.0) to OpenCode. This plugin aut
 - ✅ **Task planning** - Integrates with OpenCode's todo system
 - ✅ **Graceful errors** - Invalid skills skipped with helpful messages
 
+## Requirements
+
+- **OpenCode SDK ≥ 0.15.18** - Required for `noReply` message insertion pattern ([PR#3378](https://github.com/sst/opencode/issues/3378))
+
+The plugin uses Anthropic's standard message insertion pattern to ensure skill content persists throughout long conversations.
+
 ## Installation
 
 **No npm install needed!** OpenCode automatically installs plugins when you add them to your config.
@@ -143,16 +149,14 @@ Read the API documentation in `references/api.md`.
 Run the deployment script at `scripts/deploy.sh`.
 ```
 
-The plugin provides clear path resolution instructions:
+The plugin delivers base directory context via message insertion:
 
 ```
-**SKILL DIRECTORY:** /path/to/.opencode/skills/my-skill/
-
-If the skill mentions `references/api.md`, the full path is:
-/path/to/.opencode/skills/my-skill/references/api.md
+Base directory for this skill: /path/to/.opencode/skills/my-skill/
 ```
 
-The Agent automatically understands and resolves these paths correctly.
+The Agent automatically understands that `references/api.md` means:
+`/path/to/.opencode/skills/my-skill/references/api.md`
 
 ## Global Skills
 
@@ -169,19 +173,47 @@ This skill will be available in every OpenCode project.
 
 ## Execution Workflow
 
-When the Agent invokes a skill tool, it receives structured instructions:
+When the Agent invokes a skill tool, it receives the skill content via silent message insertion. The skill content itself may include recommended workflows such as:
 
-1. **STEP 1: PLAN THE WORK**
+1. **Planning the work** (if the skill recommends it):
    - Use `todowrite` to create task list
    - Identify all steps from skill content
    - Set appropriate priorities
 
-2. **STEP 2: EXECUTE THE SKILL**
+2. **Executing the skill**:
    - Follow skill instructions
-   - Mark todos as `in_progress` and `completed`
    - Track progress through completion
 
-This ensures systematic execution and nothing gets missed.
+The plugin delivers the content; the skill defines the workflow.
+
+## How It Works
+
+When a skill tool is invoked, the plugin uses **silent message insertion** to deliver skill content:
+
+1. **Message 1** (user message, `noReply: true`):
+   ```
+   The "skill-name" skill is loading
+   skill-name
+   ```
+
+2. **Message 2** (user message, `noReply: true`):
+   ```
+   Base directory for this skill: /path/to/skill/
+   
+   [Skill content from SKILL.md]
+   ```
+
+3. **Tool response** (minimal):
+   ```
+   Launching skill: skill-name
+   ```
+
+**Why this pattern?**
+- ✅ **Skill content persists**: User messages survive context pruning; tool responses get purged
+- ✅ **Anthropic compliance**: Matches the reference implementation pattern
+- ✅ **Clean UX**: No verbose instructions in tool response
+
+This ensures skill instructions remain available throughout long conversations, even when OpenCode removes tool responses to manage context window size.
 
 ## Examples
 
