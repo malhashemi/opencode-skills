@@ -1,6 +1,6 @@
 {
   "name": "opencode-skills",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Anthropic Agent Skills Specification plugin for OpenCode - discover and execute skills with dynamic tool registration",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
