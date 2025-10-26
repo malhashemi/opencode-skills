@@ -36,7 +36,7 @@ Pin to a specific version:
 
 ```json
 {
-  "plugin": ["opencode-skills@0.0.4"]
+  "plugin": ["opencode-skills@x.y.z"]
 }
 ```
 
