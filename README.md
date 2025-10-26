@@ -7,17 +7,18 @@ Bring Anthropic's Agent Skills Specification (v1.0) to OpenCode. This plugin aut
 
 ## Features
 
-- ✅ **Auto-discovery** - Scans `.opencode/skills/` and `~/.opencode/skills/` recursively
+- ✅ **Auto-discovery** - Scans project, home, and config directories for skills
 - ✅ **Spec compliance** - Validates against Anthropic's Skills Specification v1.0
 - ✅ **Dynamic tools** - Each skill becomes a `skills_{{name}}` tool
-- ✅ **Path resolution** - Clear instructions for relative file paths
+- ✅ **Path resolution** - Base directory context for relative file paths
 - ✅ **Nested skills** - Supports hierarchical skill organization
-- ✅ **Task planning** - Integrates with OpenCode's todo system
 - ✅ **Graceful errors** - Invalid skills skipped with helpful messages
 
-## Installation
+## Requirements
 
-**No npm install needed!** OpenCode automatically installs plugins when you add them to your config.
+- **OpenCode SDK ≥ 0.15.18** - Required for `noReply` message insertion pattern ([PR#3378](https://github.com/sst/opencode/issues/3378))
+
+## Installation
 
 Add to your `opencode.json` or `~/.config/opencode/opencode.json`:
 
@@ -27,13 +28,44 @@ Add to your `opencode.json` or `~/.config/opencode/opencode.json`:
 }
 ```
 
-OpenCode will auto-install the plugin on next startup.
+OpenCode auto-installs plugins on startup.
+
+### Version Pinning
+
+Pin to a specific version:
+
+```json
+{
+  "plugin": ["opencode-skills@0.0.4"]
+}
+```
+
+### Plugin Updates
+
+Check installed version:
+```bash
+cat ~/.cache/opencode/node_modules/opencode-skills/package.json | grep version
+```
+
+Force update to latest:
+```bash
+rm -rf ~/.cache/opencode/node_modules/opencode-skills
+# Then restart OpenCode
+```
+
+## Skill Discovery
+
+The plugin scans three locations (lowest to highest priority):
+
+1. **`~/.config/opencode/skills/`** - XDG config location (or `$XDG_CONFIG_HOME/opencode/skills/`)
+2. **`~/.opencode/skills/`** - Global skills (all projects)
+3. **`.opencode/skills/`** - Project-local skills (**overrides global**)
+
+All locations are merged. If duplicate skill names exist, the project-local version takes precedence and a warning is logged.
 
 ## Quick Start
 
 ### 1. Create a Skill
-
-Create a skill directory with a `SKILL.md` file:
 
 ```bash
 mkdir -p .opencode/skills/my-skill
@@ -63,27 +95,15 @@ You can reference supporting files like `scripts/helper.py` or `references/docs.
 
 ### 2. Restart OpenCode
 
-The plugin will discover and register your skill:
-
-```
-🎯 Skills Plugin: Starting discovery...
-✅ Found 1 skill(s): ['my-skill']
-✅ Registered 1 skill tool(s)
-```
+The plugin will discover and register your skill.
 
 ### 3. Use the Skill
-
-Simply invoke the skill tool:
 
 ```
 skills_my_skill
 ```
 
-The Agent will:
-
-1. Create a todo list of tasks from the skill
-2. Execute the skill instructions
-3. Track progress through the todo list
+The Agent receives the skill content and follows its instructions.
 
 ## Skill Structure
 
@@ -134,66 +154,39 @@ my-skill/
 - Frontmatter `name`: must match directory name exactly
 - Tool name: auto-generated with underscores (`skills_my_skill`)
 
-## Path Resolution
+## How It Works
 
-When a skill references files with relative paths:
+The plugin uses Anthropic's **message insertion pattern** to deliver skill content:
+
+1. **Skill loading message** - Announces skill activation
+2. **Skill content message** - Delivers instructions with base directory context
+3. **Tool confirmation** - Returns `"Launching skill: {name}"`
+
+Both messages use `noReply: true`, so they appear as user messages (not tool responses). This ensures skill content persists throughout long conversations, even when OpenCode purges tool responses to manage context.
+
+### Path Resolution
+
+Skills can reference files with relative paths:
 
 ```markdown
-Read the API documentation in `references/api.md`.
-Run the deployment script at `scripts/deploy.sh`.
+Read `references/api.md` and run `scripts/deploy.sh`
 ```
 
-The plugin provides clear path resolution instructions:
+The Agent receives base directory context:
 
 ```
-**SKILL DIRECTORY:** /path/to/.opencode/skills/my-skill/
-
-If the skill mentions `references/api.md`, the full path is:
-/path/to/.opencode/skills/my-skill/references/api.md
+Base directory for this skill: /path/to/.opencode/skills/my-skill/
 ```
 
-The Agent automatically understands and resolves these paths correctly.
-
-## Global Skills
-
-Skills in `~/.opencode/skills/` or `~/.config/opencode/skills/` are available across **all** projects:
-
-```bash
-mkdir -p ~/.opencode/skills/personal-notes
-# or
-mkdir -p ~/.config/opencode/skills/personal-notes
-# Create SKILL.md...
-```
-
-This skill will be available in every OpenCode project.
-
-## Execution Workflow
-
-When the Agent invokes a skill tool, it receives structured instructions:
-
-1. **STEP 1: PLAN THE WORK**
-   - Use `todowrite` to create task list
-   - Identify all steps from skill content
-   - Set appropriate priorities
-
-2. **STEP 2: EXECUTE THE SKILL**
-   - Follow skill instructions
-   - Mark todos as `in_progress` and `completed`
-   - Track progress through completion
-
-This ensures systematic execution and nothing gets missed.
-
-## Examples
-
-Check out these [example](https://github.com/anthropics/skills) skills from Anthropic repository:
+And automatically resolves paths like: `/path/to/.opencode/skills/my-skill/references/api.md`
 
 ## Troubleshooting
 
 **Skills not discovered?**
 
-- Check console for `🎯 Skills Plugin: Starting discovery...`
-- Verify `SKILL.md` files exist in `.opencode/skills/`
-- Check frontmatter validation errors in console
+- Verify `SKILL.md` files exist in discovery paths
+- Check console for discovery messages
+- Confirm frontmatter is valid YAML
 
 **Tool not appearing?**
 
@@ -203,7 +196,7 @@ Check out these [example](https://github.com/anthropics/skills) skills from Anth
 
 **Paths not resolving?**
 
-- Check the SKILL DIRECTORY shown in skill output
+- Check the base directory shown in skill output
 - Verify supporting files exist at specified paths
 - Ensure paths in SKILL.md are relative (not absolute)
 
@@ -213,82 +206,55 @@ Check out these [example](https://github.com/anthropics/skills) skills from Anth
 - Description must be at least 20 characters
 - Name in frontmatter must match directory name
 
-## Design Decisions
+**Plugin not updating?**
 
-### Agent-Level Tool Restrictions
-
-Tool restrictions are handled at the OpenCode agent level (via `opencode.json` or agent frontmatter), not at the skill level. This provides:
-
-- Clearer permission model
-- Simpler architecture
-- Better alignment with OpenCode's existing system
-
-Skills parse `allowed-tools` from frontmatter for spec compliance, but enforcement happens at the agent level.
-
-### No Hot Reload
-
-Skills are treated as project configuration, not runtime state. Adding or modifying skills requires restarting OpenCode. This is acceptable because:
-
-- Skills change infrequently
-- No API exists for runtime tool registration
-- Simpler implementation
+- Check version: `cat ~/.cache/opencode/node_modules/opencode-skills/package.json | grep version`
+- Force update: `rm -rf ~/.cache/opencode/node_modules/opencode-skills` then restart
+- Pin version: Add `@version` to plugin name in `opencode.json`
 
 ## API Reference
 
-### Plugin Export
+The plugin exports a single function that registers skills as dynamic tools:
 
 ```typescript
 export const SkillsPlugin: Plugin;
 ```
 
-The plugin automatically:
+**Discovery**: Scans `.opencode/skills/`, `~/.opencode/skills/`, and `~/.config/opencode/skills/`  
+**Validation**: Enforces Anthropic Skills Specification v1.0  
+**Tool naming**: `skills_{name}` with underscores for nested paths
 
-1. Scans for `**/SKILL.md` files in discovery paths (`.opencode/skills/`, `~/.opencode/skills/`, `~/.config/opencode/skills/`)
-2. Validates YAML frontmatter against spec
-3. Registers a tool for each valid skill
-4. Returns skill content with execution instructions
+See [types](./dist/index.d.ts) for full interface definitions.
 
-### Skill Interface
+## Advanced
 
-```typescript
-interface Skill {
-  name: string; // From frontmatter
-  fullPath: string; // Absolute path to skill directory
-  toolName: string; // Generated tool name
-  description: string; // From frontmatter
-  allowedTools?: string[]; // Parsed but not enforced
-  metadata?: Record<string, string>;
-  license?: string;
-  content: string; // Markdown body
-  path: string; // Absolute path to SKILL.md
-}
-```
+<details>
+<summary>Design Decisions</summary>
+
+### Agent-Level Tool Restrictions
+
+Tool restrictions are handled at the OpenCode agent level (via `opencode.json` or agent frontmatter), not at the skill level. This provides a clearer permission model and better alignment with OpenCode's existing system.
+
+Skills parse `allowed-tools` from frontmatter for spec compliance, but enforcement happens at the agent level.
+
+### No Hot Reload
+
+Skills are treated as project configuration, not runtime state. Adding or modifying skills requires restarting OpenCode. This is acceptable because skills change infrequently and there's no API for runtime tool registration.
+
+</details>
 
 ## Contributing
 
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+Contributions welcome! Fork, create a feature branch, and submit a PR.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT - see [LICENSE](LICENSE)
 
 ## References
 
 - [Anthropic Skills Specification](https://github.com/anthropics/skills)
 - [OpenCode Documentation](https://opencode.ai)
-- [Plugin Development Guide](https://opencode.ai/docs/plugins)
-
-## Acknowledgments
-
-- Anthropic for the Skills Specification
-- OpenCode team for the plugin system
-- Community contributors
 
 ---
 

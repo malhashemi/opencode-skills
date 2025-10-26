@@ -7,11 +7,12 @@
  * - Discovers SKILL.md files from .opencode/skills/, ~/.opencode/skills/, and ~/.config/opencode/skills/
  * - Validates skills against Anthropic's spec (YAML frontmatter + Markdown)
  * - Registers dynamic tools with pattern skills_{{skill_name}}
- * - Returns skill content with base directory context for path resolution
+ * - Delivers skill content via silent message insertion (noReply pattern)
  * - Supports nested skills with proper naming
  * 
  * Design Decisions:
  * - Tool restrictions handled at agent level (not skill level)
+ * - Message insertion pattern ensures skill content persists (user messages not purged)
  * - Base directory context enables relative path resolution
  * - Skills require restart to reload (acceptable trade-off)
  * 
@@ -198,10 +199,11 @@ export const SkillsPlugin: Plugin = async (ctx) => {
     ? join(xdgConfigHome, "opencode/skills")
     : join(os.homedir(), ".config/opencode/skills")
 
+  // Discovery order: lowest to highest priority (last wins on duplicate tool names)
   const skills = await discoverSkills([
-    join(ctx.directory, ".opencode/skills"),
-    join(os.homedir(), ".opencode/skills"),
-    configSkillsPath,
+    configSkillsPath,                        // Lowest priority: XDG config
+    join(os.homedir(), ".opencode/skills"),  // Medium priority: Global home
+    join(ctx.directory, ".opencode/skills"), // Highest priority: Project-local
   ])
   
   // Create a tool for each skill
@@ -212,49 +214,22 @@ export const SkillsPlugin: Plugin = async (ctx) => {
       description: skill.description,
       args: {},  // No args for MVP - can add template args later
       async execute(args, toolCtx) {
-        // Return the skill content with VERY explicit path resolution instructions
-        // We include the content directly to avoid confusion from separate read steps
-        return `# ⚠️ SKILL EXECUTION INSTRUCTIONS ⚠️
+        // Message 1: Skill loading header (silent insertion - no AI response)
+        const sendSilentPrompt = (text: string) =>
+          ctx.client.session.prompt({
+            path: { id: toolCtx.sessionID },
+            body: {
+              noReply: true,
+              parts: [{ type: "text", text }],
+            },
+          });
 
-**SKILL NAME:** ${skill.name}
-**SKILL DIRECTORY:** ${skill.fullPath}/
-
-## EXECUTION WORKFLOW:
-
-**STEP 1: PLAN THE WORK**
-Before executing this skill, use the \`todowrite\` tool to create a todo list of the main tasks described in the skill content below.
-- Parse the skill instructions carefully
-- Identify the key tasks and steps required
-- Create todos with status "pending" and appropriate priority levels
-- This helps track progress and ensures nothing is missed
-
-**STEP 2: EXECUTE THE SKILL**
-Follow the skill instructions below, marking todos as "in_progress" when starting a task and "completed" when done.
-Use \`todowrite\` to update task statuses as you work through them.
-
-## PATH RESOLUTION RULES (READ CAREFULLY):
-
-All file paths mentioned below are relative to the SKILL DIRECTORY shown above.
-
-**Examples:**
-- If the skill mentions \`scripts/init_skill.py\`, the full path is: \`${skill.fullPath}/scripts/init_skill.py\`
-- If the skill mentions \`references/docs.md\`, the full path is: \`${skill.fullPath}/references/docs.md\`
-- If the skill mentions \`assets/template.html\`, the full path is: \`${skill.fullPath}/assets/template.html\`
-
-**IMPORTANT:** Always prepend \`${skill.fullPath}/\` to any relative path mentioned in the skill content below.
-
----
-
-# SKILL CONTENT:
-
-${skill.content}
-
----
-
-**Remember:** 
-1. All relative paths in the skill content above are relative to: \`${skill.fullPath}/\`
-2. Update your todo list as you progress through the skill tasks
-`
+        await sendSilentPrompt(`The "${skill.name}" skill is loading\n${skill.name}`);
+        
+        await sendSilentPrompt(`Base directory for this skill: ${skill.fullPath}\n\n${skill.content}`);
+        
+        // Return minimal confirmation
+        return `Launching skill: ${skill.name}`;
       }
     })
   }
