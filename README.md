@@ -49,9 +49,10 @@ cat ~/.cache/opencode/node_modules/opencode-skills/package.json | grep version
 
 Force update to latest:
 ```bash
-rm -rf ~/.cache/opencode/node_modules/opencode-skills
-# Then restart OpenCode
+rm -rf ~/.cache/opencode
 ```
+
+Then restart OpenCode.
 
 ## Skill Discovery
 
@@ -209,7 +210,7 @@ And automatically resolves paths like: `/path/to/.opencode/skills/my-skill/refer
 **Plugin not updating?**
 
 - Check version: `cat ~/.cache/opencode/node_modules/opencode-skills/package.json | grep version`
-- Force update: `rm -rf ~/.cache/opencode/node_modules/opencode-skills` then restart
+- Force update: `rm -rf ~/.cache/opencode` then restart
 - Pin version: Add `@version` to plugin name in `opencode.json`
 
 ## API Reference
