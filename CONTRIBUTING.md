@@ -148,6 +148,73 @@ git push origin feature/your-feature-name
 - Once approved, your PR will be merged
 - Your contribution will be included in the next release!
 
+## Maintainer Workflow
+
+> **Note:** This section is for project maintainers only. Regular contributors should follow the standard PR process above.
+
+### Branch Strategy
+
+This project uses a dual-branch workflow:
+
+- **`main`** - Stable release branch
+  - Accepts external contributor PRs
+  - Triggers Release Please for automated releases
+  - Published to npm
+  
+- **`dev`** - Integration branch
+  - Used by maintainers for development and testing
+  - Tested changes promoted to `main` for release
+
+### Maintainer Development Process
+
+**1. Create feature branch from `dev`:**
+
+```bash
+git checkout dev
+git pull origin dev
+git checkout -b feature/your-feature-name
+```
+
+**2. Develop and commit using conventional commits:**
+
+```bash
+git commit -m "feat: add new feature"
+git commit -m "fix: resolve bug"
+```
+
+**3. Create PR to `dev` for integration:**
+
+```bash
+gh pr create --base dev --head feature/your-feature-name
+```
+
+**4. After merge, test on `dev`:**
+
+```bash
+npm run build
+npm run typecheck
+# Test in local OpenCode project
+```
+
+**5. When ready to release, promote `dev` to `main`:**
+
+See [RELEASE.md](RELEASE.md) for detailed release process.
+
+### Quick Release Steps
+
+```bash
+# Create promotion PR
+gh pr create \
+  --base main \
+  --head dev \
+  --title "chore: release v0.x.x - description"
+
+# After merge, Release Please creates release PR automatically
+# Merge Release Please PR → auto-publishes to npm
+```
+
+For complete release documentation, see [RELEASE.md](RELEASE.md).
+
 ## Development Setup
 
 ### Prerequisites
