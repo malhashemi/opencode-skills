@@ -215,28 +215,18 @@ export const SkillsPlugin: Plugin = async (ctx) => {
       args: {},  // No args for MVP - can add template args later
       async execute(args, toolCtx) {
         // Message 1: Skill loading header (silent insertion - no AI response)
-        await ctx.client.session.prompt({
-          path: { id: toolCtx.sessionID },
-          body: {
-            noReply: true,
-            parts: [{
-              type: "text",
-              text: `The "${skill.name}" skill is loading\n${skill.name}`
-            }]
-          }
-        });
+        const sendSilentPrompt = (text: string) =>
+          ctx.client.session.prompt({
+            path: { id: toolCtx.sessionID },
+            body: {
+              noReply: true,
+              parts: [{ type: "text", text }],
+            },
+          });
+
+        await sendSilentPrompt(`The "${skill.name}" skill is loading\n${skill.name}`);
         
-        // Message 2: Skill content with base directory context (silent insertion - no AI response)
-        await ctx.client.session.prompt({
-          path: { id: toolCtx.sessionID },
-          body: {
-            noReply: true,
-            parts: [{
-              type: "text",
-              text: `Base directory for this skill: ${skill.fullPath}\n\n${skill.content}`
-            }]
-          }
-        });
+        await sendSilentPrompt(`Base directory for this skill: ${skill.fullPath}\n\n${skill.content}`);
         
         // Return minimal confirmation
         return `Launching skill: ${skill.name}`;
