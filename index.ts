@@ -29,12 +29,9 @@ import { tool } from "@opencode-ai/plugin"
 import envPaths from "env-paths";
 import matter from "gray-matter"
 import { mergeDeepLeft } from "ramda";
-import { Logger } from "../lib/logger";
 
 
 const SKILL_PATH_PATTERN = /skills\/.*\/SKILL.md$/;
-
-const log = new Logger("skills.plugin");
 
 // Types
 type Skill = {
@@ -91,14 +88,14 @@ async function findSkillPaths(basePaths: string | string[]) {
 
         for (const basePath of basePathsArray) {
             const stat = await lstat(basePath).catch(() => null);
-            log.log(`findSkillPaths.isDirectory`, basePath, stat?.isDirectory());
+            console.log(`findSkillPaths.isDirectory`, basePath, stat?.isDirectory());
             if (!stat?.isDirectory()) {
                 continue;
             }
             paths.push(basePath);
         }
 
-        log.log("findSkillPaths.available", paths);
+        console.log("findSkillPaths.available", paths);
         const patterns = paths.map(basePath => join(basePath, "**/SKILL.md"))
         const matches = await fsPromises.glob(patterns)
         return matches;
@@ -269,11 +266,11 @@ async function createSkillRegistry(ctx: PluginInput, config: PluginConfig) {
             continue;
         }
 
-        log.log(`✅  ${skill.toolName} `);
+        console.log(`✅  ${skill.toolName} `);
 
         if (registry.has(skill.toolName)) {
             dupes.push(skill.toolName);
-            log.log('discover.duplicate', skill.toolName);
+            console.log('discover.duplicate', skill.toolName);
 
             continue;
         }
@@ -283,7 +280,7 @@ async function createSkillRegistry(ctx: PluginInput, config: PluginConfig) {
     }
 
     if (!registry.size) {
-        log.log('discover.none');
+        console.log('discover.none');
     }
 
     if (dupes.length) {
@@ -296,8 +293,13 @@ async function createSkillRegistry(ctx: PluginInput, config: PluginConfig) {
 const OpenCodePaths = envPaths("opencode", { suffix: "" });
 
 async function getPluginConfig(ctx: PluginInput): Promise<PluginConfig> {
-    // const config = await ctx.client.config.get();
-    // const resolved = config.data.plugins?.find(skill => skill.name === "opencode-skills");
+    /**
+     * Future: Load from OpenCode config
+     * const config = await ctx.client.config.get();
+     * const resolved = config.data.plugins?.find(skill => skill.name === "opencode-skills");
+     * 
+     * Raised this as https://github.com/sst/opencode/issues/4393
+     */
     const base = {
         debug: false,
         basePaths: [
@@ -312,7 +314,7 @@ async function getPluginConfig(ctx: PluginInput): Promise<PluginConfig> {
 
 export const SkillsPlugin: Plugin = async (ctx) => {
     const config = await getPluginConfig(ctx);
-    log.log('plugin.config', config);
+    console.log('plugin.config', config);
     // Discovery order: lowest to highest priority (last wins on duplicate tool names)
     const tool = await createSkillRegistry(ctx, config)
 
