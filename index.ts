@@ -259,7 +259,7 @@ async function createSkillRegistry(ctx: PluginInput, config: PluginConfig) {
     const matches = await findSkillPaths(config.basePaths);
     const dupes: string[] = [];
     const tools: Record<string, ToolDefinition> = {
-        // "skills_read_resource": createToolResourceReader(ctx, registry)
+        "skills_read_resource": createToolResourceReader(ctx, registry)
     }
 
     for await (const match of matches) {
