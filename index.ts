@@ -88,14 +88,12 @@ async function findSkillPaths(basePaths: string | string[]) {
 
         for (const basePath of basePathsArray) {
             const stat = await lstat(basePath).catch(() => null);
-            console.log(`findSkillPaths.isDirectory`, basePath, stat?.isDirectory());
             if (!stat?.isDirectory()) {
                 continue;
             }
             paths.push(basePath);
         }
 
-        console.log("findSkillPaths.available", paths);
         const patterns = paths.map(basePath => join(basePath, "**/SKILL.md"))
         const matches = await fsPromises.glob(patterns)
         return matches;
@@ -266,21 +264,14 @@ async function createSkillRegistry(ctx: PluginInput, config: PluginConfig) {
             continue;
         }
 
-        console.log(`✅  ${skill.toolName} `);
 
         if (registry.has(skill.toolName)) {
             dupes.push(skill.toolName);
-            console.log('discover.duplicate', skill.toolName);
-
             continue;
         }
 
         tools[skill.toolName] = createSkillTool(skill, { ctx });
         registry.set(skill.toolName, skill);
-    }
-
-    if (!registry.size) {
-        console.log('discover.none');
     }
 
     if (dupes.length) {
@@ -314,7 +305,6 @@ async function getPluginConfig(ctx: PluginInput): Promise<PluginConfig> {
 
 export const SkillsPlugin: Plugin = async (ctx) => {
     const config = await getPluginConfig(ctx);
-    console.log('plugin.config', config);
     // Discovery order: lowest to highest priority (last wins on duplicate tool names)
     const tool = await createSkillRegistry(ctx, config)
 
