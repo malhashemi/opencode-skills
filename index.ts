@@ -208,8 +208,8 @@ function createToolResourceReader(ctx: PluginInput, registry: SkillRegistry): To
     return tool({
         description: "Read [[<relative_path>]] from a skill's resources and inject content silently. If loading skills, use the skills_<skillname> instead.",
         args: {
-            skill_name: tool.schema.string(),
-            relative_path: tool.schema.string()
+            skill_name: tool.schema.string().describe("The name of the skill, as defined in its SKILL.md frontmatter (e.g., 'brand-guidelines')."),
+            relative_path: tool.schema.string().describe("The path to the resource file, relative to the skill's directory.")
         },
         execute: async (args, toolCtx: ToolContext) => {
             const skill = registry.get(args.skill_name);
