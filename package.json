@@ -52,7 +52,9 @@
   },
   "dependencies": {
     "@opencode-ai/sdk": "^0.15.18",
+    "env-paths": "^3.0.0",
     "gray-matter": "^4.0.3",
+    "ramda": "^0.32.0",
     "zod": "^3.23.0"
   }
 }
