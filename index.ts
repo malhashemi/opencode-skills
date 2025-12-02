@@ -219,6 +219,7 @@ export const SkillsPlugin: Plugin = async (ctx) => {
           ctx.client.session.prompt({
             path: { id: toolCtx.sessionID },
             body: {
+              agent: toolCtx.agent,
               noReply: true,
               parts: [{ type: "text", text }],
             },
