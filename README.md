@@ -16,7 +16,7 @@ Bring Anthropic's Agent Skills Specification (v1.0) to OpenCode. This plugin aut
 
 ## Requirements
 
-- **OpenCode SDK ≥ 0.15.18** - Required for `noReply` message insertion pattern ([PR#3378](https://github.com/sst/opencode/issues/3378))
+- **OpenCode SDK ≥ 1.0.126** - Required for agent context preservation and `noReply` message insertion pattern
 
 ## Installation
 
@@ -155,6 +155,63 @@ my-skill/
 - Frontmatter `name`: must match directory name exactly
 - Tool name: auto-generated with underscores (`skills_my_skill`)
 
+## Controlling Skill Access
+
+By default, all discovered skills are available to all agents. Use OpenCode's tool configuration to control which agents can access which skills.
+
+> **💡 Tip**: Use `skills*: false` at project level to prevent context pollution, then enable only what each agent needs.
+
+### Project Level (Global Defaults)
+
+Disable all skills by default, then enable specific ones in your `opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "tools": {
+    "skills*": false,
+    "skills_my_skill": true
+  }
+}
+```
+
+### Per-Agent Access
+
+Override defaults for specific built-in agents (like `build`, `plan`, etc.):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "tools": {
+    "skills*": false
+  },
+  "agent": {
+    "build": {
+      "tools": {
+        "skills_document_skills_docx": true,
+        "skills_document_skills_xlsx": true
+      }
+    }
+  }
+}
+```
+
+Now only the `build` agent has access to document skills.
+
+### Subagent Access
+
+For custom subagents, control tools via YAML frontmatter in the agent definition:
+
+```yaml
+mode: subagent
+description: Content creator agent
+tools:
+  skills_brand_guidelines: true
+  skills_writing_style: true
+```
+
+This subagent gets specific skills even if they're disabled globally.
+
 ## How It Works
 
 The plugin uses Anthropic's **message insertion pattern** to deliver skill content:
@@ -232,15 +289,17 @@ See [types](./dist/index.d.ts) for full interface definitions.
 <details>
 <summary>Design Decisions</summary>
 
-### Agent-Level Tool Restrictions
+### Why Agent-Level Permissions?
 
-Tool restrictions are handled at the OpenCode agent level (via `opencode.json` or agent frontmatter), not at the skill level. This provides a clearer permission model and better alignment with OpenCode's existing system.
+The `allowed-tools` field in skill frontmatter is parsed for Anthropic spec compliance, but **enforcement happens at the OpenCode agent level** (see [Controlling Skill Access](#controlling-skill-access)). This provides:
 
-Skills parse `allowed-tools` from frontmatter for spec compliance, but enforcement happens at the agent level.
+- Clearer permission model aligned with OpenCode's existing system
+- Centralized control in `opencode.json` rather than scattered across skills
+- Flexibility to override permissions per-project or per-agent
 
 ### No Hot Reload
 
-Skills are treated as project configuration, not runtime state. Adding or modifying skills requires restarting OpenCode. This is acceptable because skills change infrequently and there's no API for runtime tool registration.
+Skills are discovered at startup and cached. Adding or modifying skills requires restarting OpenCode. This is acceptable because skills change infrequently and simplifies the implementation.
 
 </details>
 
