@@ -166,28 +166,23 @@ async function findSkillFiles(basePath: string): Promise<string[]> {
     for (const entry of entries) {
       const fullPath = join(current, entry.name)
 
-      if (entry.isFile() && entry.name === "SKILL.md") {
-        skillFiles.push(fullPath)
-        continue
-      }
-
-      if (entry.isDirectory()) {
-        queue.push(fullPath)
-        continue
-      }
+      let stat: fs.Dirent | Awaited<ReturnType<typeof fs.stat>>
 
       if (entry.isSymbolicLink()) {
-        const target = await fs.realpath(fullPath).catch(() => null)
-        if (!target) continue
-
-        const stat = await fs.stat(target).catch(() => null)
-        if (!stat) continue
-
-        if (stat.isDirectory()) {
-          queue.push(fullPath)
-        } else if (stat.isFile() && entry.name === "SKILL.md") {
-          skillFiles.push(fullPath)
+        try {
+          // fs.stat follows symlinks; broken links are skipped
+          stat = await fs.stat(fullPath)
+        } catch {
+          continue
         }
+      } else {
+        stat = entry
+      }
+
+      if (stat.isDirectory()) {
+        queue.push(fullPath)
+      } else if (stat.isFile() && entry.name === "SKILL.md") {
+        skillFiles.push(fullPath)
       }
     }
   }
