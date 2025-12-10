@@ -22,10 +22,10 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { tool } from "@opencode-ai/plugin"
 import matter from "gray-matter"
-import { Glob } from "bun"
 import { join, dirname, basename, relative, sep } from "path"
 import { z } from "zod"
 import os from "os"
+import { promises as fs } from "fs"
 
 // Types
 interface Skill {
@@ -128,19 +128,83 @@ async function parseSkill(skillPath: string, baseDir: string): Promise<Skill | n
 /**
  * Discover all SKILL.md files in the specified base paths
  */
+async function findSkillFiles(basePath: string): Promise<string[]> {
+  const skillFiles: string[] = []
+  const visited = new Set<string>()
+  const queue = [basePath]
+
+  while (queue.length > 0) {
+    const current = queue.pop()!
+    let realCurrent: string
+
+    try {
+      realCurrent = await fs.realpath(current)
+    } catch (error: any) {
+      // If the root path is missing, propagate so the caller can handle it
+      if (current === basePath && error?.code === "ENOENT") {
+        throw error
+      }
+      continue
+    }
+
+    if (visited.has(realCurrent)) {
+      continue
+    }
+    visited.add(realCurrent)
+
+    let entries
+    try {
+      entries = await fs.readdir(current, { withFileTypes: true })
+    } catch (error: any) {
+      if (current === basePath && error?.code === "ENOENT") {
+        throw error
+      }
+      console.warn(`Unexpected error reading ${current}:`, error)
+      continue
+    }
+
+    for (const entry of entries) {
+      const fullPath = join(current, entry.name)
+
+      if (entry.isFile() && entry.name === "SKILL.md") {
+        skillFiles.push(fullPath)
+        continue
+      }
+
+      if (entry.isDirectory()) {
+        queue.push(fullPath)
+        continue
+      }
+
+      if (entry.isSymbolicLink()) {
+        const target = await fs.realpath(fullPath).catch(() => null)
+        if (!target) continue
+
+        const stat = await fs.stat(target).catch(() => null)
+        if (!stat) continue
+
+        if (stat.isDirectory()) {
+          queue.push(fullPath)
+        } else if (stat.isFile() && entry.name === "SKILL.md") {
+          skillFiles.push(fullPath)
+        }
+      }
+    }
+  }
+
+  return skillFiles
+}
+
 async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
   const skills: Skill[] = []
   let foundPath = false;
   
   for (const basePath of basePaths) {
     try {
-      // Find all SKILL.md files recursively
-      const glob = new Glob("**/SKILL.md")
-      
-      for await (const match of glob.scan({ 
-        cwd: basePath, 
-        absolute: true 
-      })) {
+      // Find all SKILL.md files recursively (following symlinked skill directories)
+      const matches = await findSkillFiles(basePath)
+
+      for (const match of matches) {
         const skill = await parseSkill(match, basePath)
         if (skill) {
           skills.push(skill)
