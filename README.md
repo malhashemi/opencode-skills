@@ -43,11 +43,13 @@ Pin to a specific version:
 ### Plugin Updates
 
 Check installed version:
+
 ```bash
 cat ~/.cache/opencode/node_modules/opencode-skills/package.json | grep version
 ```
 
 Force update to latest:
+
 ```bash
 rm -rf ~/.cache/opencode
 ```
@@ -276,7 +278,7 @@ And automatically resolves paths like: `/path/to/.opencode/skills/my-skill/refer
 The plugin exports a single function that registers skills as dynamic tools:
 
 ```typescript
-export const SkillsPlugin: Plugin;
+export const SkillsPlugin: Plugin
 ```
 
 **Discovery**: Scans `.opencode/skills/`, `~/.opencode/skills/`, and `~/.config/opencode/skills/`  
