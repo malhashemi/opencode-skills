@@ -56,11 +56,12 @@ Then restart OpenCode.
 
 ## Skill Discovery
 
-The plugin scans three locations (lowest to highest priority):
+The plugin scans these locations (lowest to highest priority):
 
 1. **`~/.config/opencode/skills/`** - XDG config location (or `$XDG_CONFIG_HOME/opencode/skills/`)
 2. **`~/.opencode/skills/`** - Global skills (all projects)
-3. **`.opencode/skills/`** - Project-local skills (**overrides global**)
+3. **`$OPENCODE_CONFIG_DIR/skills/`** (if set) - Custom OpenCode config directory (higher priority than global, lower than project-local)
+4. **`.opencode/skills/`** - Project-local skills (**overrides global**)
 
 All locations are merged. If duplicate skill names exist, the project-local version takes precedence and a warning is logged.
 
