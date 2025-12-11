@@ -257,13 +257,19 @@ export const SkillsPlugin: Plugin = async (ctx) => {
   const configSkillsPath = xdgConfigHome
     ? join(xdgConfigHome, "opencode/skills")
     : join(os.homedir(), ".config/opencode/skills")
+  
+  // Allow skills to be loaded from OPENCODE_CONFIG_DIR (custom OpenCode config dir)
+  const opencodeConfigDir = process.env.OPENCODE_CONFIG_DIR
 
   // Discovery order: lowest to highest priority (last wins on duplicate tool names)
-  const skills = await discoverSkills([
-    configSkillsPath,                        // Lowest priority: XDG config
-    join(os.homedir(), ".opencode/skills"),  // Medium priority: Global home
-    join(ctx.directory, ".opencode/skills"), // Highest priority: Project-local
-  ])
+  const skills = await discoverSkills(
+    [
+      configSkillsPath,                                       // Lowest priority: XDG config
+      join(os.homedir(), ".opencode/skills"),                 // Medium priority: Global home
+      opencodeConfigDir && join(opencodeConfigDir, "skills"), // Medium-high priority: Custom config
+      join(ctx.directory, ".opencode/skills"),                // Highest priority: Project-local
+    ].filter((p): p is string => Boolean(p))
+  )
   
   // Create a tool for each skill
   const tools: Record<string, any> = {}
