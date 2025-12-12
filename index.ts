@@ -189,7 +189,7 @@ export async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
   }
 
   if (duplicates.length > 0) {
-    console.warn(`Duplicate tool names detected:`, duplicates)
+    console.warn(`⚠️ Duplicate tool names detected:`, duplicates)
   }
 
   return skills
