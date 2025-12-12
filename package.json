@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@opencode-ai/sdk": "^1.0.126",
+    "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
     "zod": "^3.23.0"
   }

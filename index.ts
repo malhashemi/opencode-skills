@@ -23,9 +23,10 @@ import type { Plugin } from "@opencode-ai/plugin"
 import { tool } from "@opencode-ai/plugin"
 import matter from "gray-matter"
 import { join, dirname, basename, relative, sep } from "path"
+import { readFile } from "fs/promises"
 import { z } from "zod"
 import os from "os"
-import { Glob } from "bun"
+import fg from "fast-glob"
 
 // Types (exported for testing)
 export interface Skill {
@@ -76,7 +77,7 @@ export function generateToolName(skillPath: string, baseDir: string): string {
 export async function parseSkill(skillPath: string, baseDir: string): Promise<Skill | null> {
   try {
     // Read file
-    const content = await Bun.file(skillPath).text()
+    const content = await readFile(skillPath, "utf-8")
 
     // Parse YAML frontmatter
     const { data, content: markdown } = matter(content)
@@ -141,13 +142,13 @@ export async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
   for (const basePath of basePaths) {
     try {
       // Find all SKILL.md files recursively (following symlinks)
-      const glob = new Glob("**/SKILL.md")
-
-      for await (const match of glob.scan({
+      const matches = await fg("**/SKILL.md", {
         cwd: basePath,
         absolute: true,
-        followSymlinks: true,
-      })) {
+        followSymbolicLinks: true,
+      })
+
+      for (const match of matches) {
         const skill = await parseSkill(match, basePath)
         if (skill) {
           skills.push(skill)
