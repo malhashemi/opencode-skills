@@ -22,16 +22,10 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { tool } from "@opencode-ai/plugin"
 import matter from "gray-matter"
+import { Glob } from "bun"
 import { join, dirname, basename, relative, sep } from "path"
-import { readFile } from "fs/promises"
 import { z } from "zod"
 import os from "os"
-// Use namespace import for CJS/ESM interop compatibility
-// In some Node.js environments, default imports from CJS modules resolve incorrectly
-import * as fgModule from "fast-glob"
-// Handle CJS/ESM interop: the function is at .default in some environments
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fg: typeof fgModule.default = (fgModule as any).default ?? fgModule
 
 // Types (exported for testing)
 export interface Skill {
@@ -82,7 +76,7 @@ export function generateToolName(skillPath: string, baseDir: string): string {
 export async function parseSkill(skillPath: string, baseDir: string): Promise<Skill | null> {
   try {
     // Read file
-    const content = await readFile(skillPath, "utf-8")
+    const content = await Bun.file(skillPath).text()
 
     // Parse YAML frontmatter
     const { data, content: markdown } = matter(content)
@@ -147,13 +141,12 @@ export async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
   for (const basePath of basePaths) {
     try {
       // Find all SKILL.md files recursively (following symlinks)
-      const matches = await fg("**/SKILL.md", {
+      const glob = new Glob("**/SKILL.md")
+      for await (const match of glob.scan({
         cwd: basePath,
         absolute: true,
-        followSymbolicLinks: true,
-      })
-
-      for (const match of matches) {
+        followSymlinks: true,
+      })) {
         const skill = await parseSkill(match, basePath)
         if (skill) {
           skills.push(skill)
