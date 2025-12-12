@@ -26,7 +26,12 @@ import { join, dirname, basename, relative, sep } from "path"
 import { readFile } from "fs/promises"
 import { z } from "zod"
 import os from "os"
-import fg from "fast-glob"
+// Use namespace import for CJS/ESM interop compatibility
+// In some Node.js environments, default imports from CJS modules resolve incorrectly
+import * as fgModule from "fast-glob"
+// Handle CJS/ESM interop: the function is at .default in some environments
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const fg: typeof fgModule.default = (fgModule as any).default ?? fgModule
 
 // Types (exported for testing)
 export interface Skill {
