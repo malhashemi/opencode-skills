@@ -1,9 +1,7 @@
 name: Release Please
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call: # Called by publish-switch.yml
 
 permissions:
   contents: write
@@ -30,7 +28,10 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         with:
           node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+
+      - name: Update npm for OIDC support
+        if: ${{ steps.release.outputs.release_created }}
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         if: ${{ steps.release.outputs.release_created }}
