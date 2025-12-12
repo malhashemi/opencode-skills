@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7](https://github.com/malhashemi/opencode-skills/compare/v0.1.6...v0.1.7) (2025-12-12)
+
+
+### Bug Fixes
+
+* **hotfix:** remove exports from internal functions to match v0.1.1 ([e4db6bc](https://github.com/malhashemi/opencode-skills/commit/e4db6bc5e0ceccfd589f5bd9eea9e4f138287857))
+
 ## [0.1.6](https://github.com/malhashemi/opencode-skills/compare/v0.1.5...v0.1.6) (2025-12-12)
 
 
