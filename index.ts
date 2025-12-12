@@ -59,9 +59,8 @@ type SkillFrontmatter = z.infer<typeof SkillFrontmatterSchema>
  * Examples:
  *   .opencode/skills/brand-guidelines/SKILL.md → skills_brand_guidelines
  *   .opencode/skills/document-skills/docx/SKILL.md → skills_document_skills_docx
- * @exported for testing
  */
-export function generateToolName(skillPath: string, baseDir: string): string {
+function generateToolName(skillPath: string, baseDir: string): string {
   const rel = relative(baseDir, skillPath)
   const dirPath = dirname(rel)
   const components = dirPath.split(sep).filter((c) => c !== ".")
@@ -71,9 +70,8 @@ export function generateToolName(skillPath: string, baseDir: string): string {
 /**
  * Parse a SKILL.md file and return structured skill data
  * Returns null if parsing fails (with error logging)
- * @exported for testing
  */
-export async function parseSkill(skillPath: string, baseDir: string): Promise<Skill | null> {
+async function parseSkill(skillPath: string, baseDir: string): Promise<Skill | null> {
   try {
     // Read file
     const content = await Bun.file(skillPath).text()
@@ -132,9 +130,8 @@ export async function parseSkill(skillPath: string, baseDir: string): Promise<Sk
 
 /**
  * Discover all skills from the given base paths
- * @exported for testing
  */
-export async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
+async function discoverSkills(basePaths: string[]): Promise<Skill[]> {
   const skills: Skill[] = []
   let foundPath = false
 
