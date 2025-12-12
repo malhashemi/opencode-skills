@@ -3,6 +3,9 @@ import { mkdir, rm, writeFile, symlink } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 
+// Import functions under test
+import { generateToolName, parseSkill, discoverSkills, type Skill } from "./index"
+
 /**
  * Test utilities
  */
@@ -12,18 +15,20 @@ async function createTestDir(): Promise<string> {
   return dir
 }
 
-async function createSkill(
+async function createSkillFile(
   baseDir: string,
   name: string,
-  options: { description?: string; nested?: string } = {}
+  options: { description?: string; nested?: string; content?: string } = {}
 ): Promise<string> {
   const description = options.description ?? `Test skill ${name} for automated testing purposes`
   const skillPath = options.nested ? join(baseDir, options.nested, name) : join(baseDir, name)
 
   await mkdir(skillPath, { recursive: true })
+  const skillFilePath = join(skillPath, "SKILL.md")
   await writeFile(
-    join(skillPath, "SKILL.md"),
-    `---
+    skillFilePath,
+    options.content ??
+      `---
 name: ${name}
 description: "${description}"
 ---
@@ -33,46 +38,168 @@ description: "${description}"
 Test content for ${name}.
 `
   )
-  return skillPath
+  return skillFilePath
 }
 
 /**
- * Tests for generateToolName logic
+ * Tests for generateToolName function
  */
-describe("Tool Name Generation", () => {
-  test("converts simple skill name", async () => {
+describe("generateToolName", () => {
+  test("converts simple skill name to tool name", () => {
+    const skillPath = "/base/my-skill/SKILL.md"
+    const baseDir = "/base"
+    const result = generateToolName(skillPath, baseDir)
+    expect(result).toBe("skills_my_skill")
+  })
+
+  test("handles nested skill directories", () => {
+    const skillPath = "/base/document-skills/pdf/SKILL.md"
+    const baseDir = "/base"
+    const result = generateToolName(skillPath, baseDir)
+    expect(result).toBe("skills_document_skills_pdf")
+  })
+
+  test("handles deeply nested paths", () => {
+    const skillPath = "/base/level1/level2/level3/deep-skill/SKILL.md"
+    const baseDir = "/base"
+    const result = generateToolName(skillPath, baseDir)
+    expect(result).toBe("skills_level1_level2_level3_deep_skill")
+  })
+
+  test("replaces hyphens with underscores", () => {
+    const skillPath = "/base/my-awesome-skill/SKILL.md"
+    const baseDir = "/base"
+    const result = generateToolName(skillPath, baseDir)
+    expect(result).toBe("skills_my_awesome_skill")
+  })
+})
+
+/**
+ * Tests for parseSkill function
+ */
+describe("parseSkill", () => {
+  test("parses valid skill file", async () => {
     const testDir = await createTestDir()
     try {
-      await createSkill(testDir, "my-skill")
+      const skillFile = await createSkillFile(testDir, "valid-skill")
+      const skill = await parseSkill(skillFile, testDir)
 
-      const { Glob } = await import("bun")
-      const glob = new Glob("**/SKILL.md")
-      const matches: string[] = []
-      for await (const match of glob.scan({ cwd: testDir, absolute: true })) {
-        matches.push(match)
-      }
-
-      expect(matches.length).toBe(1)
-      expect(matches[0]).toContain("my-skill/SKILL.md")
+      expect(skill).not.toBeNull()
+      expect(skill!.name).toBe("valid-skill")
+      expect(skill!.toolName).toBe("skills_valid_skill")
+      expect(skill!.description).toBe("Test skill valid-skill for automated testing purposes")
+      expect(skill!.content).toContain("# valid-skill")
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
   })
 
-  test("handles nested skill directories", async () => {
+  test("parses skill with all frontmatter fields", async () => {
     const testDir = await createTestDir()
+    const skillDir = join(testDir, "full-skill")
     try {
-      await createSkill(testDir, "pdf", { nested: "document-skills" })
+      await mkdir(skillDir, { recursive: true })
+      const skillFile = join(skillDir, "SKILL.md")
+      await writeFile(
+        skillFile,
+        `---
+name: full-skill
+description: "A complete skill with all frontmatter fields"
+license: MIT
+allowed-tools:
+  - Read
+  - Write
+  - Bash
+metadata:
+  version: "1.0"
+  author: test
+---
 
-      const { Glob } = await import("bun")
-      const glob = new Glob("**/SKILL.md")
-      const matches: string[] = []
-      for await (const match of glob.scan({ cwd: testDir, absolute: true })) {
-        matches.push(match)
-      }
+# Full Skill
 
-      expect(matches.length).toBe(1)
-      expect(matches[0]).toContain("document-skills/pdf/SKILL.md")
+Complete content here.
+`
+      )
+
+      const skill = await parseSkill(skillFile, testDir)
+
+      expect(skill).not.toBeNull()
+      expect(skill!.name).toBe("full-skill")
+      expect(skill!.license).toBe("MIT")
+      expect(skill!.allowedTools).toEqual(["Read", "Write", "Bash"])
+      expect(skill!.metadata).toEqual({ version: "1.0", author: "test" })
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test("returns null for invalid frontmatter (short description)", async () => {
+    const testDir = await createTestDir()
+    const skillDir = join(testDir, "bad-skill")
+    try {
+      await mkdir(skillDir, { recursive: true })
+      const skillFile = join(skillDir, "SKILL.md")
+      await writeFile(
+        skillFile,
+        `---
+name: bad-skill
+description: "Too short"
+---
+
+# Bad Skill
+`
+      )
+
+      const skill = await parseSkill(skillFile, testDir)
+      expect(skill).toBeNull()
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test("returns null when name doesn't match directory", async () => {
+    const testDir = await createTestDir()
+    const skillDir = join(testDir, "actual-dir")
+    try {
+      await mkdir(skillDir, { recursive: true })
+      const skillFile = join(skillDir, "SKILL.md")
+      await writeFile(
+        skillFile,
+        `---
+name: different-name
+description: "A skill where name doesn't match directory name"
+---
+
+# Mismatched Skill
+`
+      )
+
+      const skill = await parseSkill(skillFile, testDir)
+      expect(skill).toBeNull()
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test("returns null for invalid name format (uppercase)", async () => {
+    const testDir = await createTestDir()
+    const skillDir = join(testDir, "BadName")
+    try {
+      await mkdir(skillDir, { recursive: true })
+      const skillFile = join(skillDir, "SKILL.md")
+      await writeFile(
+        skillFile,
+        `---
+name: BadName
+description: "A skill with invalid name containing uppercase"
+---
+
+# Bad Name
+`
+      )
+
+      const skill = await parseSkill(skillFile, testDir)
+      expect(skill).toBeNull()
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
@@ -80,37 +207,97 @@ describe("Tool Name Generation", () => {
 })
 
 /**
- * Tests for symlink support
+ * Tests for discoverSkills function
  */
-describe("Symlink Support", () => {
+describe("discoverSkills", () => {
+  test("discovers single skill", async () => {
+    const testDir = await createTestDir()
+    try {
+      await createSkillFile(testDir, "my-skill")
+      const skills = await discoverSkills([testDir])
+
+      expect(skills.length).toBe(1)
+      expect(skills[0].name).toBe("my-skill")
+      expect(skills[0].toolName).toBe("skills_my_skill")
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test("discovers multiple skills", async () => {
+    const testDir = await createTestDir()
+    try {
+      await createSkillFile(testDir, "skill-one")
+      await createSkillFile(testDir, "skill-two")
+      await createSkillFile(testDir, "skill-three")
+
+      const skills = await discoverSkills([testDir])
+
+      expect(skills.length).toBe(3)
+      const names = skills.map((s) => s.name).sort()
+      expect(names).toEqual(["skill-one", "skill-three", "skill-two"])
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test("discovers nested skills", async () => {
+    const testDir = await createTestDir()
+    try {
+      await createSkillFile(testDir, "pdf", { nested: "document-skills" })
+
+      const skills = await discoverSkills([testDir])
+
+      expect(skills.length).toBe(1)
+      expect(skills[0].name).toBe("pdf")
+      expect(skills[0].toolName).toBe("skills_document_skills_pdf")
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test("handles non-existent directory gracefully", async () => {
+    const skills = await discoverSkills(["/nonexistent/path/that/does/not/exist"])
+    expect(skills.length).toBe(0)
+  })
+
+  test("discovers skills from multiple base paths", async () => {
+    const testDir1 = await createTestDir()
+    const testDir2 = await createTestDir()
+    try {
+      await createSkillFile(testDir1, "skill-from-dir-one")
+      await createSkillFile(testDir2, "skill-from-dir-two")
+
+      const skills = await discoverSkills([testDir1, testDir2])
+
+      expect(skills.length).toBe(2)
+      const names = skills.map((s) => s.name).sort()
+      expect(names).toEqual(["skill-from-dir-one", "skill-from-dir-two"])
+    } finally {
+      await rm(testDir1, { recursive: true, force: true })
+      await rm(testDir2, { recursive: true, force: true })
+    }
+  })
+
   test("follows symlinked skill directories", async () => {
     const testDir = await createTestDir()
     const realDir = join(testDir, "real-skills")
     const linkDir = join(testDir, "linked-skills")
 
     try {
-      // Create real skill directory
       await mkdir(realDir, { recursive: true })
-      await createSkill(realDir, "real-skill")
+      await createSkillFile(realDir, "real-skill")
 
       // Create symlink to real directory
       await symlink(realDir, linkDir)
 
-      const { Glob } = await import("bun")
-      const glob = new Glob("**/SKILL.md")
-      const matches: string[] = []
-      for await (const match of glob.scan({
-        cwd: testDir,
-        absolute: true,
-        followSymlinks: true,
-      })) {
-        matches.push(match)
-      }
+      // Discover from the parent dir - should find skill in both paths
+      const skills = await discoverSkills([testDir])
 
-      // Should find skill in both real and linked paths
-      expect(matches.length).toBe(2)
-      expect(matches.some((m) => m.includes("real-skills"))).toBe(true)
-      expect(matches.some((m) => m.includes("linked-skills"))).toBe(true)
+      // Should find 2 skills (one from real path, one from symlink)
+      expect(skills.length).toBe(2)
+      expect(skills.some((s) => s.path.includes("real-skills"))).toBe(true)
+      expect(skills.some((s) => s.path.includes("linked-skills"))).toBe(true)
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
@@ -119,7 +306,8 @@ describe("Symlink Support", () => {
   test("handles symlink to individual skill directory", async () => {
     const testDir = await createTestDir()
     const realSkillDir = join(testDir, "actual", "my-skill")
-    const linkedSkillDir = join(testDir, "skills", "my-skill")
+    const skillsDir = join(testDir, "skills")
+    const linkedSkillDir = join(skillsDir, "my-skill")
 
     try {
       // Create real skill
@@ -135,136 +323,44 @@ description: "A skill accessed via symlink for testing"
       )
 
       // Create symlink in skills directory
-      await mkdir(join(testDir, "skills"), { recursive: true })
+      await mkdir(skillsDir, { recursive: true })
       await symlink(realSkillDir, linkedSkillDir)
 
-      const { Glob } = await import("bun")
-      const glob = new Glob("**/SKILL.md")
-      const matches: string[] = []
-      for await (const match of glob.scan({
-        cwd: join(testDir, "skills"),
-        absolute: true,
-        followSymlinks: true,
-      })) {
-        matches.push(match)
-      }
+      // Discover from the skills directory
+      const skills = await discoverSkills([skillsDir])
 
-      expect(matches.length).toBe(1)
-      expect(matches[0]).toContain("skills/my-skill/SKILL.md")
-    } finally {
-      await rm(testDir, { recursive: true, force: true })
-    }
-  })
-})
-
-/**
- * Tests for skill discovery edge cases
- */
-describe("Skill Discovery Edge Cases", () => {
-  test("discovers multiple skills in same directory", async () => {
-    const testDir = await createTestDir()
-    try {
-      await createSkill(testDir, "skill-one")
-      await createSkill(testDir, "skill-two")
-      await createSkill(testDir, "skill-three")
-
-      const { Glob } = await import("bun")
-      const glob = new Glob("**/SKILL.md")
-      const matches: string[] = []
-      for await (const match of glob.scan({ cwd: testDir, absolute: true })) {
-        matches.push(match)
-      }
-
-      expect(matches.length).toBe(3)
+      expect(skills.length).toBe(1)
+      expect(skills[0].name).toBe("my-skill")
+      expect(skills[0].path).toContain("skills/my-skill/SKILL.md")
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
   })
 
-  test("ignores non-SKILL.md files", async () => {
+  test("ignores invalid skills (doesn't break discovery)", async () => {
     const testDir = await createTestDir()
     try {
-      await createSkill(testDir, "valid-skill")
+      // Create valid skill
+      await createSkillFile(testDir, "valid-skill")
 
-      // Create decoy files
-      await writeFile(join(testDir, "README.md"), "# Not a skill")
-      await writeFile(join(testDir, "skill.md"), "# Wrong case")
-      await mkdir(join(testDir, "fake-skill"))
-      await writeFile(join(testDir, "fake-skill", "readme.md"), "# Not SKILL.md")
-
-      const { Glob } = await import("bun")
-      const glob = new Glob("**/SKILL.md")
-      const matches: string[] = []
-      for await (const match of glob.scan({ cwd: testDir, absolute: true })) {
-        matches.push(match)
-      }
-
-      expect(matches.length).toBe(1)
-      expect(matches[0]).toContain("valid-skill/SKILL.md")
-    } finally {
-      await rm(testDir, { recursive: true, force: true })
-    }
-  })
-
-  test("handles deeply nested skills", async () => {
-    const testDir = await createTestDir()
-    try {
-      await createSkill(testDir, "deep-skill", { nested: "level1/level2/level3" })
-
-      const { Glob } = await import("bun")
-      const glob = new Glob("**/SKILL.md")
-      const matches: string[] = []
-      for await (const match of glob.scan({ cwd: testDir, absolute: true })) {
-        matches.push(match)
-      }
-
-      expect(matches.length).toBe(1)
-      expect(matches[0]).toContain("level1/level2/level3/deep-skill/SKILL.md")
-    } finally {
-      await rm(testDir, { recursive: true, force: true })
-    }
-  })
-})
-
-/**
- * Tests for frontmatter validation
- */
-describe("Frontmatter Validation", () => {
-  test("valid frontmatter structure", async () => {
-    const testDir = await createTestDir()
-    const skillDir = join(testDir, "valid-skill")
-
-    try {
-      await mkdir(skillDir, { recursive: true })
+      // Create invalid skill (bad frontmatter)
+      const badDir = join(testDir, "bad-skill")
+      await mkdir(badDir, { recursive: true })
       await writeFile(
-        join(skillDir, "SKILL.md"),
+        join(badDir, "SKILL.md"),
         `---
-name: valid-skill
-description: "A valid skill with proper frontmatter for testing"
-license: MIT
-allowed-tools:
-  - Read
-  - Write
-metadata:
-  version: "1.0"
-  author: test
+name: bad-skill
+description: "Short"
 ---
-
-# Valid Skill
-
-Content here.
+# Bad
 `
       )
 
-      const content = await Bun.file(join(skillDir, "SKILL.md")).text()
-      const matter = await import("gray-matter")
-      const { data } = matter.default(content)
+      const skills = await discoverSkills([testDir])
 
-      expect(data.name).toBe("valid-skill")
-      expect(data.description).toBe("A valid skill with proper frontmatter for testing")
-      expect(data.license).toBe("MIT")
-      expect(data["allowed-tools"]).toEqual(["Read", "Write"])
-      expect(data.metadata).toEqual({ version: "1.0", author: "test" })
+      // Should only find the valid skill
+      expect(skills.length).toBe(1)
+      expect(skills[0].name).toBe("valid-skill")
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }

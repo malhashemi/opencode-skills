@@ -16,6 +16,6 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["index.ts", "index.test.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["index.ts"],
+  "exclude": ["node_modules", "dist", "*.test.ts"]
 }
