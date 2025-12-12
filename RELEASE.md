@@ -26,6 +26,7 @@ gh pr create --base dev --head feature/your-feature-name
 ```
 
 After PR is merged:
+
 - Test integrated changes
 - Verify builds: `npm run build`
 - Verify types: `npm run typecheck`
@@ -51,6 +52,7 @@ After merge, Release Please will handle versioning and publishing."
 ```
 
 **Review checklist before creating PR:**
+
 - [ ] All features tested on `dev`
 - [ ] Build passes: `npm run build`
 - [ ] Types pass: `npm run typecheck`
@@ -64,6 +66,7 @@ Review and merge the promotion PR. This triggers Release Please.
 ### 4. Release Please Creates Release PR
 
 Release Please automatically:
+
 - Analyzes commits since last release
 - Determines version bump based on conventional commits
 - Updates `package.json` version
@@ -76,12 +79,14 @@ Release Please automatically:
 ### 5. Merge Release Please PR
 
 When you merge the Release Please PR, it automatically:
+
 - Creates git tag (e.g., `v0.1.0`)
 - Creates GitHub release with changelog
 - Publishes to npm with provenance
 - Triggers the publish workflow
 
 **After publish:**
+
 - Verify on npm: https://www.npmjs.com/package/opencode-skills
 - Test installation: `npm install opencode-skills@latest`
 
@@ -104,23 +109,23 @@ This project follows [Semantic Versioning](https://semver.org/) with [Convention
 
 While version is `0.x.x`, breaking changes bump **minor** version (configured in `release-please-config.json`):
 
-| Commit Type | Example | Version Bump | Description |
-|-------------|---------|--------------|-------------|
-| `feat:` | `feat: add skill templates` | 0.0.4 → 0.1.0 | New feature (minor) |
-| `fix:` | `fix: resolve path issue` | 0.0.4 → 0.0.5 | Bug fix (patch) |
-| `feat!:` | `feat!: change API` | 0.0.4 → 0.1.0 | Breaking change (minor) |
-| `BREAKING CHANGE:` | In commit body | 0.0.4 → 0.1.0 | Breaking change (minor) |
-| `docs:`, `chore:` | Documentation/maintenance | No bump | No release |
+| Commit Type        | Example                     | Version Bump  | Description             |
+| ------------------ | --------------------------- | ------------- | ----------------------- |
+| `feat:`            | `feat: add skill templates` | 0.0.4 → 0.1.0 | New feature (minor)     |
+| `fix:`             | `fix: resolve path issue`   | 0.0.4 → 0.0.5 | Bug fix (patch)         |
+| `feat!:`           | `feat!: change API`         | 0.0.4 → 0.1.0 | Breaking change (minor) |
+| `BREAKING CHANGE:` | In commit body              | 0.0.4 → 0.1.0 | Breaking change (minor) |
+| `docs:`, `chore:`  | Documentation/maintenance   | No bump       | No release              |
 
 ### Post-1.0 Versioning
 
 After reaching `1.0.0`, breaking changes will bump **major** version:
 
-| Commit Type | Version Bump |
-|-------------|--------------|
-| `feat!:` | 1.0.0 → 2.0.0 |
-| `feat:` | 1.0.0 → 1.1.0 |
-| `fix:` | 1.0.0 → 1.0.1 |
+| Commit Type | Version Bump  |
+| ----------- | ------------- |
+| `feat!:`    | 1.0.0 → 2.0.0 |
+| `feat:`     | 1.0.0 → 1.1.0 |
+| `fix:`      | 1.0.0 → 1.0.1 |
 
 ## External Contributor PRs
 
@@ -144,7 +149,8 @@ External contributors create PRs directly to `main`. When merged:
 
 **Cause:** Commit type doesn't match change.
 
-**Solution:** 
+**Solution:**
+
 - Close Release Please PR
 - Fix commit message on `main` branch
 - Release Please will recreate PR with correct version
@@ -154,6 +160,7 @@ External contributors create PRs directly to `main`. When merged:
 **Cause:** npm authentication issue.
 
 **Solution:**
+
 1. Check `NPM_TOKEN` secret in GitHub settings
 2. Verify token has publish permissions
 3. Re-run failed workflow
@@ -182,6 +189,7 @@ gh pr create --base main --head hotfix/critical-fix
 ```
 
 After merge:
+
 1. Release Please creates release PR
 2. Merge to publish
 3. **Don't forget to backport to `dev`:**
@@ -212,6 +220,7 @@ After merging Release Please PR:
 ## Questions?
 
 If you're unsure about the release process:
+
 - Review recent releases: https://github.com/malhashemi/opencode-skills/releases
 - Check Release Please docs: https://github.com/googleapis/release-please
 - Open a discussion: https://github.com/malhashemi/opencode-skills/discussions

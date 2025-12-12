@@ -17,6 +17,7 @@ Thank you for your interest in contributing to the OpenCode Skills Plugin! This 
 ## Code of Conduct
 
 By participating in this project, you agree to:
+
 - Be respectful and inclusive
 - Provide constructive feedback
 - Focus on the issue, not the person
@@ -27,10 +28,12 @@ By participating in this project, you agree to:
 ### Reporting Bugs
 
 Before creating a bug report:
+
 1. Check the [existing issues](https://github.com/malhashemi/opencode-skills/issues) to see if it's already reported
 2. If you can't find an existing issue, create a new one
 
 When creating a bug report, include:
+
 - **Clear title and description**
 - **Steps to reproduce** the bug
 - **Expected behavior** vs **actual behavior**
@@ -40,10 +43,12 @@ When creating a bug report, include:
 ### Suggesting Enhancements
 
 Enhancement suggestions are welcome! Before creating an enhancement request:
+
 1. Check [existing issues](https://github.com/malhashemi/opencode-skills/issues) for similar suggestions
 2. Consider if the enhancement fits the project's goals
 
 When suggesting an enhancement, include:
+
 - **Clear description** of the enhancement
 - **Use cases** - why is this useful?
 - **Possible implementation** approach (optional)
@@ -58,9 +63,11 @@ Click the "Fork" button on GitHub to create your own copy of the repository.
 #### 2. Clone Your Fork
 
 # Clone using SSH
+
 git clone git@github.com:YOUR-USERNAME/opencode-skills.git
 
 # OR Clone using HTTPS
+
 git clone https://github.com/YOUR-USERNAME/opencode-skills.git
 cd opencode-skills
 
@@ -78,6 +85,7 @@ git checkout -b feature/your-feature-name
 ```
 
 **Branch naming conventions:**
+
 - `feature/description` - New features
 - `fix/description` - Bug fixes
 - `docs/description` - Documentation updates
@@ -101,6 +109,7 @@ git commit -m "docs: update installation instructions"
 ```
 
 **Commit types:**
+
 - `feat:` - New feature (triggers minor version bump)
 - `fix:` - Bug fix (triggers patch version bump)
 - `docs:` - Documentation changes only
@@ -110,6 +119,7 @@ git commit -m "docs: update installation instructions"
 - `perf:` - Performance improvements
 
 **Breaking changes:**
+
 ```bash
 git commit -m "feat!: change skill loading API
 
@@ -160,7 +170,6 @@ This project uses a dual-branch workflow:
   - Accepts external contributor PRs
   - Triggers Release Please for automated releases
   - Published to npm
-  
 - **`dev`** - Integration branch
   - Used by maintainers for development and testing
   - Tested changes promoted to `main` for release
@@ -243,6 +252,7 @@ npm run typecheck
 ### Testing Your Changes
 
 1. **Build the project:**
+
    ```bash
    npm run build
    ```
@@ -350,6 +360,7 @@ If you have questions:
 ## Recognition
 
 Contributors are recognized in:
+
 - Release notes (automatically via Release Drafter)
 - GitHub Contributors page
 - Special thanks in major releases
