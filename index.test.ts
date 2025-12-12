@@ -235,7 +235,7 @@ describe("discoverSkills", () => {
 
       expect(skills.length).toBe(3)
       const names = skills.map((s) => s.name).sort()
-      expect(names).toEqual(["skill-one", "skill-three", "skill-two"])
+      expect(names).toEqual(["skill-one", "skill-two", "skill-three"].sort())
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
