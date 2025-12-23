@@ -438,4 +438,4 @@ MIT - see [LICENSE](LICENSE)
 
 ---
 
-_This repository is archived for historical reference. Not affiliated with OpenAI or Anthropic._
+_This repository is archived for historical reference. Not affiliated with OpenCode or Anthropic._
