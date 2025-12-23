@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0](https://github.com/malhashemi/opencode-skills/compare/v0.1.7...v1.0.0) (2025-12-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* This plugin is deprecated. Skills functionality is now built into OpenCode natively.
+
+### Documentation
+
+* deprecate plugin - skills now native in OpenCode v1.0.190+ ([#54](https://github.com/malhashemi/opencode-skills/issues/54)) ([fa75b67](https://github.com/malhashemi/opencode-skills/commit/fa75b671e1bc52f137aa208b7d099c41b0f45092))
+
 ## [0.1.7](https://github.com/malhashemi/opencode-skills/compare/v0.1.6...v0.1.7) (2025-12-12)
 
 
