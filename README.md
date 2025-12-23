@@ -1,11 +1,117 @@
 # OpenCode Skills Plugin
 
-[![npm version](https://img.shields.io/npm/v/opencode-skills.svg)](https://www.npmjs.com/package/opencode-skills)
+> ## 🎓 This Plugin Has Graduated to Native OpenCode Support!
+>
+> **Great news!** The skills functionality pioneered by this plugin is now **built into OpenCode** as of v1.0.190.
+>
+> This plugin served as the proof-of-concept that led to native skills support in OpenCode:
+>
+> - [PR #5930](https://github.com/sst/opencode/pull/5930) - Native `skill` tool with pattern-based permissions
+> - [PR #6000](https://github.com/sst/opencode/pull/6000) - Per-agent skill filtering (v1.0.191)
+>
+> **[Jump to Migration Guide](#migration)** | **[See What's Next](#whats-next)**
+
+---
+
+[![DEPRECATED](https://img.shields.io/badge/STATUS-DEPRECATED-red.svg)](#migration)
+[![Graduated to Native](https://img.shields.io/badge/Native%20Support-OpenCode%20v1.0.190+-success.svg)](https://github.com/sst/opencode/pull/5930)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Bring Anthropic's Agent Skills Specification (v1.0) to OpenCode. This plugin automatically discovers and registers skills as dynamic tools, enabling the Agent to leverage specialized knowledge, workflows, and bundled resources.
+---
 
-## Features
+## Migration
+
+### 1. Remove the Plugin
+
+```diff
+// opencode.json
+{
+-  "plugin": ["opencode-skills"]
+}
+```
+
+### 2. Move Your Skills Directory
+
+```bash
+# Native uses skill/ (singular) at project root instead of .opencode/skills/
+mv .opencode/skills skill
+
+# For global skills
+mv ~/.opencode/skills ~/.config/opencode/skill
+```
+
+### 3. Update Your Config (Optional)
+
+Native skills use pattern-based permissions instead of tool-level config:
+
+```diff
+// opencode.json
+{
+-  "tools": {
+-    "skills*": false,
+-    "skills_my_skill": true
+-  }
++  "permission": {
++    "skill": {
++      "my-skill": "allow",
++      "*": "deny"
++    }
++  }
+}
+```
+
+### Key Differences
+
+| Aspect      | This Plugin            | Native (v1.0.190+)          |
+| ----------- | ---------------------- | --------------------------- |
+| Tool name   | `skills_my_skill`      | `skill` (single tool)       |
+| Directory   | `.opencode/skills/`    | `skill/`                    |
+| Loading     | Eager (all at startup) | **Lazy** (on-demand)        |
+| Permissions | `tools` config         | `permission.skill` patterns |
+
+Your existing `SKILL.md` files work unchanged - just move them to the new location!
+
+---
+
+## Thank You! 💜
+
+To everyone who starred, used, and provided feedback on this plugin - **your support made native implementation possible**.
+
+This plugin was the first stepping stone, proving that the OpenCode community wanted skills support. Your adoption and feedback directly influenced the native implementation.
+
+Special thanks to the OpenCode maintainers ([@thdxr](https://github.com/thdxr)) for the collaboration on PRs [#5930](https://github.com/sst/opencode/pull/5930) and [#6000](https://github.com/sst/opencode/pull/6000).
+
+---
+
+## What's Next?
+
+I'm working on something new. **Stay tuned.** ✨
+
+In the meantime, check out my other OpenCode plugin:
+
+### 🔄 [opencode-sessions](https://github.com/malhashemi/opencode-sessions)
+
+**Multi-agent collaboration and workflow orchestration for OpenCode**
+
+| Mode        | What It Does                                                     |
+| ----------- | ---------------------------------------------------------------- |
+| **Fork**    | Explore multiple approaches in parallel (compare architectures!) |
+| **Message** | Turn-based agent collaboration in the same conversation          |
+| **New**     | Clean handoffs between phases (Research → Plan → Build)          |
+| **Compact** | Manual compression to maintain long conversations                |
+
+```bash
+# Add to opencode.json: { "plugin": ["opencode-sessions"] }
+```
+
+---
+
+## Historical Documentation
+
+<details>
+<summary>📚 Original README (for reference)</summary>
+
+### Original Features
 
 - ✅ **Auto-discovery** - Scans project, home, and config directories for skills
 - ✅ **Spec compliance** - Validates against Anthropic's Skills Specification v1.0
@@ -14,11 +120,11 @@ Bring Anthropic's Agent Skills Specification (v1.0) to OpenCode. This plugin aut
 - ✅ **Nested skills** - Supports hierarchical skill organization
 - ✅ **Graceful errors** - Invalid skills skipped with helpful messages
 
-## Requirements
+### Requirements
 
 - **OpenCode SDK ≥ 1.0.126** - Required for agent context preservation and `noReply` message insertion pattern
 
-## Installation
+### Installation
 
 Add to your `opencode.json` or `~/.config/opencode/opencode.json`:
 
@@ -310,15 +416,26 @@ Skills are discovered at startup and cached. Adding or modifying skills requires
 
 Contributions welcome! Fork, create a feature branch, and submit a PR.
 
-## License
+### License
 
 MIT - see [LICENSE](LICENSE)
 
-## References
+### References
 
 - [Anthropic Skills Specification](https://github.com/anthropics/skills)
 - [OpenCode Documentation](https://opencode.ai)
 
+</details>
+
 ---
 
-**Not affiliated with OpenAI or Anthropic.** This is an independent open-source project.
+## Links
+
+- **Native Skills Docs**: [opencode.ai/docs/skills](https://opencode.ai/docs/skills)
+- **PR #5930**: [Native skill tool](https://github.com/sst/opencode/pull/5930)
+- **PR #6000**: [Per-agent filtering](https://github.com/sst/opencode/pull/6000)
+- **opencode-sessions**: [github.com/malhashemi/opencode-sessions](https://github.com/malhashemi/opencode-sessions)
+
+---
+
+_This repository is archived for historical reference. Not affiliated with OpenAI or Anthropic._
