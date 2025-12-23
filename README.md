@@ -2,7 +2,7 @@
 
 > ## 🎓 This Plugin Has Graduated to Native OpenCode Support!
 >
-> **Great news!** The skills functionality pioneered by this plugin is now **built into OpenCode** as of v1.0.190.
+> **Great news!** The skills functionality first brought to OpenCode by this plugin is now **built into OpenCode** as of v1.0.190.
 >
 > This plugin served as the proof-of-concept that led to native skills support in OpenCode:
 >
